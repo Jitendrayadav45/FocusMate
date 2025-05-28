@@ -190,6 +190,8 @@ function App() {
           return task;
         }).filter(task => task !== null); // Remove completed tasks
 
+        // Save updated tasks to local storage
+        localStorage.setItem('tasks', JSON.stringify(updatedTasks));
         return updatedTasks;
       });
     }, 1000);
@@ -197,10 +199,25 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Initial fetch
+  // Load tasks from local storage on mount
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    const savedTasks = localStorage.getItem('tasks');
+    if (savedTasks) {
+      try {
+        const parsedTasks = JSON.parse(savedTasks);
+        // Ensure loaded tasks are not running on refresh
+        const tasksOnLoad = parsedTasks.map(task => ({ ...task, isRunning: false }));
+        setTasks(tasksOnLoad);
+      } catch (error) {
+        console.error('Error parsing tasks from local storage:', error);
+        // If parsing fails, start with empty tasks
+        setTasks([]);
+      }
+    } else {
+      // If no saved tasks, fetch from API
+      fetchTasks();
+    }
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -295,7 +312,7 @@ function App() {
             </div>
           </div>
         </div>
-
+        
         {/* Task Input Section */}
         <div className="task-input-container" style={{ marginTop: '20px', marginBottom: '30px' }}>
           <input
@@ -338,6 +355,7 @@ function App() {
             Add Task
           </button>
         </div>
+
 
         {/* Task List */}
         <div className="task-list" style={{ marginBottom: '30px' }}>
